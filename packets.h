@@ -1,38 +1,71 @@
 #ifndef PACKETS_H
 #define PACKETS_H
 
+#include <stdint.h>
+
 typedef struct ZergHeader
 {
-    char version: 1;
-    char type: 3;
-    int totalLength: 24;
-    int srcID: 16;
-    int dstID: 16;
-    int seqID;
-    void (*paylod)(int totalLength);
+    uint8_t type: 4;
+    uint8_t version: 4;
+    uint32_t totalLength: 24;
+    uint16_t srcID;
+    uint16_t  dstID;
+    uint32_t seqID;
 } ZergHeader;
 
-typedef struct PcapFileHeader
+typedef struct ZergStatus
 {
-    int fileType;
-    int majorVer: 16;
-    int minorVer: 16;
-    int gmtOffset;
-    int accuracyDelta;
-    int maxLengthCapture;
-    int linkLayer;
-} PcapFileHeader;
+    uint32_t hitPoints: 24;
+    uint8_t armor;
+    uint32_t maxHitPoints: 24;
+    uint8_t type;
+    uint32_t speed;
+} ZergStatus;
+
+typedef struct ZergCommand
+{
+    uint16_t command;
+    uint16_t parameterOne;
+    uint32_t parameterTwo;
+
+} ZergCommand;
+
+typedef struct ZergGPS
+{
+    uint64_t longitude;
+    uint64_t latitude;
+    uint32_t altitude;
+    uint32_t bearing;
+    uint32_t speed;
+    uint32_t accuracy;
+} ZergGPS;
+
+typedef struct PcapPacketHeader
+{
+    uint32_t uinxEpoch;
+    uint32_t microSecEpoch;
+    uint32_t lengthOfDataCaptured;
+    uint32_t untruncatedPacketLength;
+} PcapPacketHeader;
 
 typedef struct IpHeader
 {
-
+    uint8_t IHL: 4;
+    uint8_t version: 4;
+    uint8_t ECN: 2;
+    uint8_t DSCP: 6;
+    uint16_t totalLength;
+    uint16_t ID;
+    uint16_t fragmentOffset: 13;
+    uint16_t flags: 3;
+    uint8_t TTL;
+    uint8_t protocol;
+    uint16_t checksum;
+    uint32_t srcIP;
+    uint32_t dstIP;
 } IpHeader; 
 
-int hexToInt(char *pcap, int start, int end, char endian);
-void printHex(char *pcap, int start, int end, char endian);
-void msgPayload(int totalLength);
-void statusZerg(int totalLength);
-void cmdInstruction(int totalLength);
-void gpsData(int totalLength);
+uint32_t htobe24(uint32_t num);
+void parseZergHeader(ZergHeader *zergHeader, FILE *pFile);
 
 #endif

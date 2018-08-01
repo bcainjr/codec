@@ -9,14 +9,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <endian.h>
 #include "packets.h"
 
 int main(int argc, char *argv[])
 {
     FILE *pFile = NULL;
-    char byte;
-    int byteCnt = 0, i = 0;
-    char *pcap;
+    ZergHeader *zergHeader;
+    PcapPacketHeader *packetHeader;
+
+    if(argc != 2)
+    {
+        printf("To many arguments.\n");
+        exit(1);
+    }
 
     pFile = fopen(argv[1], "r");
 
@@ -26,30 +32,21 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    while(fread(&byte, sizeof(char), 1, pFile) == 1)
+    /* Parse the Zerg header */
+    zergHeader = calloc(sizeof(ZergHeader), 1);
+    parseZergHeader(zergHeader, pFile);
+
+    /* Check for end of file */
+    packetHeader = calloc(sizeof(PcapPacketHeader), 1);
+    if(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) != 
+            sizeof(PcapPacketHeader))
     {
-        byteCnt++;
+        printf("No more packets\n");
     }
-
-    pcap = calloc(byteCnt, sizeof(char *));
-
-    fseek(pFile, 0, SEEK_SET);
-
-    while(fread(&byte, sizeof(char), 1, pFile) == 1)
-    {
-        pcap[i++] = byte;
-    }
-
-    printf("Big endian read: ");
-    printHex(pcap, 83, 86, 0);
-    printf("\nLittle endian read: ");
-    printHex(pcap, 83, 86, 1);
-    printf("\n");
-
-    printf("IHL = %d\n", hexToInt(pcap, 54, 55, 0) & 240);
-
 
     fclose(pFile);
+    free(packetHeader);
+    free(zergHeader);
 
     return 0;
 }
