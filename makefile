@@ -4,19 +4,19 @@ DEPS = packets.h
 SRCE = encode.c packets.c
 SRCD = decode.c packets.c
 
-all: packets.c decode.c encode.c
-	$(CC) $(CFLAGS) -o decode $(SRCD)
-	$(CC) $(CFLAGS) -o encode encode.c packets.c
-
-decode: packets.c decode.c
-	$(CC) $(CFLAGS) -o decode $(SRCD)
-
-encode: packets.c encode.c
-	$(CC) $(CFLAGS) -o decode $(SRCE)
-
-debug:packets.c decode.c encode.c
+all: packets.c decode.c encode.c packets.h
 	$(CC) $(CFLAGS) -o decode $(SRCD)
 	$(CC) $(CFLAGS) -o encode $(SRCE)
+
+decode: packets.c decode.c packets.h
+	$(CC) $(CFLAGS) -o decode $(SRCD)
+
+encode: packets.c encode.c packets.h
+	$(CC) $(CFLAGS) -o decode $(SRCE)
+
+debug:packets.c decode.c
+	$(CC) $(CFLAGS) -o decode $(SRCD)
+#	$(CC) $(CFLAGS) -o encode $(SRCE)
 
 clean:
 	-@rm -rf *.o
