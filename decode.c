@@ -7,10 +7,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <endian.h>
-#include "packets.h"
+#include "Packets.h"
+
+#define PCAPPACKETHEADSTART 24
 
 int main(int argc, char *argv[])
 {
@@ -32,17 +31,19 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    /* Parse the Zerg header */
+    fseek(pFile, PCAPPACKETHEADSTART, SEEK_SET);
+    packetHeader = calloc(sizeof(PcapPacketHeader), 1);
+    fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile);
+
     zergHeader = calloc(sizeof(ZergHeader), 1);
-    parseZergHeader(zergHeader, pFile);
+
+    do
+    {
+        /* Parse the Zerg header */
+        parseZergHeader(zergHeader, pFile);
 
     /* Check for end of file */
-    packetHeader = calloc(sizeof(PcapPacketHeader), 1);
-    if(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) != 
-            sizeof(PcapPacketHeader))
-    {
-        printf("No more packets\n");
-    }
+    } while(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) == 1);
 
     fclose(pFile);
     free(packetHeader);
