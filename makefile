@@ -12,11 +12,11 @@ decode: $(SRCD) $(DEPS)
 	$(CC) $(CFLAGS) -o decode $(SRCD)
 
 encode: $(SRCE) $(DEPS)
-	$(CC) $(CFLAGS) -o decode $(SRCE)
+	$(CC) $(CFLAGS) -o encode $(SRCE)
 
 debug: Packets.c decode.c
-	$(CC) $(CFLAGS) -o decode $(SRCD)
-#	$(CC) $(CFLAGS) -o encode $(SRCE)
+	@$(CC) $(CFLAGS) -o decode $(SRCD)
+	@$(CC) $(CFLAGS) -o encode $(SRCE)
 
 clean:
 	-@rm -rf *.o
