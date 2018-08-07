@@ -3,6 +3,19 @@
 
 #include <stdint.h>
 
+typedef union SinglePrecisionFloat
+{
+    uint32_t hex;
+    float typeFloat;
+}__attribute__((packed)) SinglePrecisionFloat;
+
+typedef union DoublePrecisionFloat
+{
+    uint64_t hex;
+    double typeDouble;
+}__attribute__((packed)) DoublePrecisionFloat;
+
+
 typedef struct ZergHeader
 {
     uint8_t type: 4;
@@ -11,7 +24,7 @@ typedef struct ZergHeader
     uint16_t srcID;
     uint16_t  dstID;
     uint32_t seqID;
-} ZergHeader;
+}__attribute__((packed)) ZergHeader;
 
 typedef struct ZergStatus
 {
@@ -20,19 +33,19 @@ typedef struct ZergStatus
     uint32_t maxHitPoints: 24;
     uint8_t type;
     uint32_t speed;
-} ZergStatus;
+}__attribute__((packed)) ZergStatus;
 
 typedef struct ZergCommand
 {
     uint16_t command;
 
-} ZergCommand;
+}__attribute__((packed)) ZergCommand;
 
 typedef struct ZergCommandParameters
 {
     uint16_t parameterOne;
     uint32_t parameterTwo;
-} ZergCommandParameters;
+}__attribute__((packed)) ZergCommandParameters;
 
 typedef struct ZergGPS
 {
@@ -42,7 +55,18 @@ typedef struct ZergGPS
     uint32_t bearing;
     uint32_t speed;
     uint32_t accuracy;
-} ZergGPS;
+}__attribute__((packed)) ZergGPS;
+
+typedef struct PcapFileHeader
+{
+    uint32_t fileTypeID;
+    uint16_t majorVersion;
+    uint16_t minorVersion;
+    uint32_t gmtOffset;
+    uint32_t accuracyDelta;
+    uint32_t maxLengthOfCapture;
+    uint32_t linkLayerType;
+}__attribute__((packed)) PcapFileHeader;
 
 typedef struct PcapPacketHeader
 {
@@ -50,7 +74,7 @@ typedef struct PcapPacketHeader
     uint32_t microSecEpoch;
     uint32_t lengthOfDataCaptured;
     uint32_t untruncatedPacketLength;
-} PcapPacketHeader;
+}__attribute__((packed)) PcapPacketHeader;
 
 typedef struct EthernetHeader
 {
@@ -58,8 +82,8 @@ typedef struct EthernetHeader
     uint16_t macDestinationSec;
     uint16_t macSourceFirst;
     uint32_t macSourceSec;
-    uint8_t ethernetType;
-} EthernetHeader;
+    uint16_t ethernetType;
+}__attribute__((packed)) EthernetHeader;
 
 typedef struct IpHeader
 {
@@ -76,9 +100,30 @@ typedef struct IpHeader
     uint16_t checksum;
     uint32_t srcIP;
     uint32_t dstIP;
-} IpHeader; 
+}__attribute__((packed)) IpHeader; 
+
+typedef struct UdpHeader
+{
+    uint16_t srcPort;
+    uint16_t dstPort;
+    uint16_t length;
+    uint16_t checksum;
+}__attribute__((packed)) UdpHeader;
 
 uint32_t htobe24(uint32_t num);
 void parseZergHeader(ZergHeader *zergHeader, FILE *pFile);
+void fprintPcapFileHeader(FILE *outFile);
+void fprintPcapPacketHeader(int zergLength, FILE *outFile);
+void fprintEthernetHeader(FILE *outFile);
+void fprintIpHeader(int zergLength, FILE *outFile);
+void fprintUdpHeader(int zergLength, FILE *outFile);
+void fprintZergHeader(ZergHeader *zergHeader, FILE *inFile, FILE *outFile);
+void fprintZergStatus(int totalLength, FILE *inFile, FILE *outFile);
+void fprintZergCommand(FILE *inFile, FILE *outFile);
+void fprintZergGPS(FILE *inFile, FILE *outFile);
+void getZergString(int length, char **str, FILE *pFile);
+int getTypeNumber(char *type);
+int getCmdNumber(char *type);
+void moveToNextLine(FILE *inFile);
 
 #endif

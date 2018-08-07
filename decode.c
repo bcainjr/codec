@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Packets.h"
+#pragma pack(1)
 
 #define PCAPPACKETHEADSTART 24
 
@@ -16,6 +17,7 @@ int main(int argc, char *argv[])
     FILE *pFile = NULL;
     ZergHeader *zergHeader;
     PcapPacketHeader *packetHeader;
+    PcapFileHeader *fileHeader;
 
     if(argc != 2)
     {
@@ -31,7 +33,15 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    fseek(pFile, PCAPPACKETHEADSTART, SEEK_SET);
+    fileHeader = calloc(sizeof(PcapFileHeader), 1);
+    fread(fileHeader, sizeof(PcapFileHeader), 1, pFile);
+    if(fileHeader->majorVersion != 2 || fileHeader->minorVersion != 4)
+    {
+        printf("Invalid pcap version.\n");
+        free(fileHeader);
+        exit(1);
+    }
+
     packetHeader = calloc(sizeof(PcapPacketHeader), 1);
     fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile);
 
@@ -46,6 +56,7 @@ int main(int argc, char *argv[])
     } while(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) == 1);
 
     fclose(pFile);
+    free(fileHeader);
     free(packetHeader);
     free(zergHeader);
 
