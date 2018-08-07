@@ -20,5 +20,5 @@ debug: Packets.c decode.c
 
 clean:
 	-@rm -rf *.o
-	-@rm -rf *.c
+	-@rm -rf encode decode
 

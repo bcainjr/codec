@@ -318,7 +318,7 @@ void fprintPcapPacketHeader(int zergLength, FILE *outFile)
     PcapPacketHeader *pcapPacketHeader = calloc(sizeof(PcapPacketHeader), 1);
     pcapPacketHeader->uinxEpoch               = 0x00000000;
     pcapPacketHeader->microSecEpoch           = 0x00000000;
-    pcapPacketHeader->lengthOfDataCaptured    = htole32(zergLength + HEADERSIZETOTAL);
+    pcapPacketHeader->lengthOfDataCaptured    = zergLength + HEADERSIZETOTAL;
     pcapPacketHeader->untruncatedPacketLength = 0x00000000;
 
     fwrite(pcapPacketHeader, sizeof(PcapPacketHeader), 1, outFile);
@@ -375,10 +375,11 @@ void fprintUdpHeader(int zergLength, FILE *outFile)
     free(udpHeader);
 }
 
-void getZergString(int length, char **str, FILE *pFile)
+void getZergString(int type, char **str, FILE *pFile)
 { 
     char *word = NULL, sep[3] = " ";
-    size_t size = 0; 
+    size_t size = 0, strLength = 0, startStr = 0; 
+
     /* Remove tag and capture message */
     if(getdelim(&word, &size, *sep, pFile) != -1)
     {
@@ -390,16 +391,33 @@ void getZergString(int length, char **str, FILE *pFile)
     {
         continue;
     }
+
     /* Move back to begining of first word */
     fseek(pFile, -1, SEEK_CUR);
-    *str = calloc(length + 1, 1);
+    startStr = ftell(pFile);
 
-    fgets(*str, length + 1, pFile);
+    if(type == 0)
+    {
+        while(fgetc(pFile) != EOF)
+        {
+            strLength++;
+        }
+    }
+    else if(type == 1)
+    {
+        while(fgetc(pFile) != '\n')
+        {
+            strLength++;
+        }
+
+    }
+    fseek(pFile, startStr - ftell(pFile), SEEK_CUR);
+    *str = calloc(strLength, 1);
+    fgets(*str, strLength, pFile);
 }
 
 void fprintZergHeader(ZergHeader *zergHeader, FILE *inFile, FILE *outFile)
 {
-
     switch(zergHeader->type)
     {
         case 0:
@@ -408,7 +426,7 @@ void fprintZergHeader(ZergHeader *zergHeader, FILE *inFile, FILE *outFile)
 
             /* Skip new line character */
             fseek(inFile, 1, SEEK_CUR);
-            getZergString(htobe24(zergHeader->totalLength) - ZERGHEADERSIZE, 
+            getZergString(zergHeader->type, 
                     &printLine, inFile);
             fwrite(printLine, htobe24(zergHeader->totalLength) - ZERGHEADERSIZE,
                     1, outFile);
@@ -452,9 +470,9 @@ void fprintZergStatus(int totalLength, FILE *inFile, FILE *outFile)
     /* Skip new line character */
     fseek(inFile, 1, SEEK_CUR);
 
-    /* Start parsing for Zerg Status header */
+    /* Start filling Zerg Status header */
     getZergString(
-            totalLength - ZERGHEADERSIZE - STATUSHEADERSIZE,
+            1,
             &printLine, inFile);
 
     fscanf(inFile, "%15s %u/%u", fields[0], &hitPoints, &maxHitPoints);
@@ -626,19 +644,24 @@ void fprintZergGPS(FILE *inFile, FILE *outFile)
         exit(5);
     }
 
+    /* Reading in GPS header */
     fscanf(inFile, "%15s %f", field[0], &(altitude.typeFloat));
     moveToNextLine(inFile);
     zergGPS->altitude = htobe32(altitude.hex);
+
     fscanf(inFile, "%15s %f", field[0], &(bearing.typeFloat));
     moveToNextLine(inFile);
     zergGPS->bearing = htobe32(bearing.hex);
+
     fscanf(inFile, "%15s %f", field[0], &(speed.typeFloat));
     moveToNextLine(inFile);
     zergGPS->speed = htobe32(speed.hex);
+
     fscanf(inFile, "%15s %f", field[0], &(accuracy.typeFloat));
     moveToNextLine(inFile);
     zergGPS->accuracy = htobe32(accuracy.hex);
 
+    /* Writing GPS header to specified pcap file. */
     fwrite(zergGPS, sizeof(ZergGPS), 1, outFile);
     free(zergGPS);
 }
@@ -691,4 +714,24 @@ void moveToNextLine(FILE *inFile)
     {
         continue;
     }
+}
+
+int checkInputMain(char fields[][16])
+{
+    int returnValue = 0;
+    char field[5][11] =
+    {
+        "Sequence:", "From:", "To:",
+        "Type:", "Length:"
+    };
+
+    for(int i = 0; i < 5; i++)
+    {
+        if(strcmp(field[i], fields[i]))
+        {
+            returnValue = 1;
+        }
+    }
+
+    return returnValue;
 }
