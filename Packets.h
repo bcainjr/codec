@@ -125,5 +125,6 @@ void getZergString(int length, char **str, FILE *pFile);
 int getTypeNumber(char *type);
 int getCmdNumber(char *type);
 void moveToNextLine(FILE *inFile);
+int checkInputMain(char fields[][16]);
 
 #endif
