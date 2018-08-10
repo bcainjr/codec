@@ -1,0 +1,33 @@
+----------Zerg Header----------
+Version:   1
+Sequence:  81
+From:      7890
+To:        1234
+Type:      0
+Length:    24
+Message:   Hello World!
+----------Zerg Header----------
+Version:   1
+Sequence:  9
+From:      1337
+To:        7890
+Type:      1
+Length:    29
+Name:      ZaLgO
+HP:        17/35
+Type:      Drone
+Armor:     0
+MaxSpeed:  12.953100 u/s
+----------Zerg Header----------
+Version:   1
+Sequence:  81
+From:      1337
+To:        6600
+Type:      3
+Length:    44
+Latitude:  87.918287 deg. N
+Longitude: -32.234523 deg. W
+Altitude:  23.786091 fathoms
+Bearing:   47.833332 deg.
+Speed:     27.777779 m/s
+Accuracy:  5.000000 m

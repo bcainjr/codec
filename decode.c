@@ -8,21 +8,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Packets.h"
+#include "DecodeFunc.h"
+
 #pragma pack(1)
 
-#define PCAPPACKETHEADSTART 24
+/* Exit codes */
+#define INVALIDARGUMENTS 2
+#define FAILEDFILEOPEN   4
+#define INVALIDPCAP      56
 
 int main(int argc, char *argv[])
 {
     FILE *pFile = NULL;
     ZergHeader *zergHeader;
     PcapPacketHeader *packetHeader;
-    PcapFileHeader *fileHeader;
 
     if(argc != 2)
     {
         printf("To many arguments.\n");
-        exit(1);
+        exit(INVALIDARGUMENTS);
     }
 
     pFile = fopen(argv[1], "r");
@@ -30,36 +34,30 @@ int main(int argc, char *argv[])
     if(pFile == NULL)
     {
         printf("Couldn't open file %s\n", argv[1]);
-        exit(1);
+        exit(FAILEDFILEOPEN);
     }
 
-    fileHeader = calloc(sizeof(PcapFileHeader), 1);
-    fread(fileHeader, sizeof(PcapFileHeader), 1, pFile);
-    if(fileHeader->majorVersion != 2 || fileHeader->minorVersion != 4)
+    if(checkFileHeader(pFile))
     {
-        printf("Invalid pcap version.\n");
-        free(fileHeader);
-        exit(1);
+        printf("Invalid pcap.\n");
+        fclose(pFile);
+        exit(INVALIDPCAP);
     }
 
     packetHeader = calloc(sizeof(PcapPacketHeader), 1);
-    fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile);
 
-    zergHeader = calloc(sizeof(ZergHeader), 1);
-
-    do
+    while(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) == 1)
     {
-        /* Parse the Zerg header */
-        parseZergHeader(zergHeader, pFile);
+        free(packetHeader);
 
-    /* Check for end of file */
-    } while(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) == 1);
+        /* Parse the Zerg header */
+        zergHeader = calloc(sizeof(ZergHeader), 1);
+        parseZergHeader(zergHeader, pFile);
+        packetHeader = calloc(sizeof(PcapPacketHeader), 1);
+    }
 
     fclose(pFile);
-    free(fileHeader);
     free(packetHeader);
-    free(zergHeader);
 
     return 0;
 }
-

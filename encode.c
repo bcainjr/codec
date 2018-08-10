@@ -10,9 +10,15 @@
 #include <string.h>
 #include <ctype.h>
 #include "Packets.h"
+#include "EncodeFunc.h"
+
 #pragma pack(1)
 
-#define ZERGHEADERSIZE 12
+/* Exit Status */
+#define INVALIDARGUMENTS 2
+#define FAILEDFILEOPEN   4
+#define INVALIDVERSION   11
+#define INVALIDFORMAT    51
 
 int main(int argc, char *argv[])
 {
@@ -26,21 +32,21 @@ int main(int argc, char *argv[])
     if(argc != 3)
     {
         printf("To many or to little arguments.\n");
-        exit(2);
+        exit(INVALIDARGUMENTS);
     }
 
     pFile = fopen(argv[1], "r");
     if(pFile == NULL)
     {
-        printf("Failed to open file %s.\n", argv[1]);
-        exit(3);
+        printf("Failed to open %s.\n", argv[1]);
+        exit(FAILEDFILEOPEN);
     }
 
     pOutFile = fopen(argv[2], "wb+");
     if(pOutFile == NULL)
     {
         printf("Failed to open %s.\n", argv[2]);
-        exit(3);
+        exit(FAILEDFILEOPEN);
     }
 
     fprintPcapFileHeader(pOutFile);
@@ -48,7 +54,7 @@ int main(int argc, char *argv[])
     /* Move pass header banner */
     while(fread(header, sizeof(char), 32, pFile) == 32)
     { 
-        zergHeader= calloc(sizeof(ZergHeader), 1);
+        zergHeader= calloc(1, sizeof(ZergHeader));
         fscanf(pFile, "%15s %u", fields[0], &version);
         zergHeader->version = 0x1;
 
@@ -56,7 +62,7 @@ int main(int argc, char *argv[])
         {
             printf("Invalid Version.\n");
             free(zergHeader);
-            exit(3);
+            exit(INVALIDVERSION);
         }
 
         /* Read in main Zerg header */   
@@ -73,14 +79,15 @@ int main(int argc, char *argv[])
         zergHeader->type = type;
 
         fscanf(pFile, "%15s %u", fields[4], &totalLength);
-        zergHeader->totalLength = htobe24(ZERGHEADERSIZE);
+        zergHeader->totalLength = htobe24(totalLength);
 
         if(checkInputMain(fields))
         {
             printf("Invalid main format.\n");
             free(zergHeader);
             fclose(pFile);
-            exit(4);
+            fclose(pOutFile);
+            exit(INVALIDFORMAT);
         }
      
         fprintZergHeader(zergHeader, pFile, pOutFile); 
