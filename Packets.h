@@ -3,19 +3,29 @@
 
 #include <stdint.h>
 
+/*
+ * A union to convert a int to a float or vice versa
+ * bit for bit.
+ */
 typedef union SinglePrecisionFloat
 {
     uint32_t hex;
     float typeFloat;
 }__attribute__((packed)) SinglePrecisionFloat;
 
+/*
+ * A union to conver a int to a double or vice versa
+ * bit for bit.
+ */
 typedef union DoublePrecisionFloat
 {
     uint64_t hex;
     double typeDouble;
 }__attribute__((packed)) DoublePrecisionFloat;
 
-
+/*
+ * ZergHeader contains all fields for the main zerg header.
+ */
 typedef struct ZergHeader
 {
     uint8_t type: 4;
@@ -26,6 +36,9 @@ typedef struct ZergHeader
     uint32_t seqID;
 }__attribute__((packed)) ZergHeader;
 
+/*
+ * ZergStatus contains all fields for the zerg status payload.
+ */
 typedef struct ZergStatus
 {
     uint32_t hitPoints: 24;
@@ -35,18 +48,28 @@ typedef struct ZergStatus
     uint32_t speed;
 }__attribute__((packed)) ZergStatus;
 
+/*
+ * ZergCommand conatains the initial command type.
+ */
 typedef struct ZergCommand
 {
     uint16_t command;
 
 }__attribute__((packed)) ZergCommand;
 
+/*
+ * ZergCommandParameters contains the two parameters in the
+ * command payload.
+ */
 typedef struct ZergCommandParameters
 {
     uint16_t parameterOne;
     uint32_t parameterTwo;
 }__attribute__((packed)) ZergCommandParameters;
 
+/*
+ * ZergGPS contains the fields in the zerg gps payload.
+ */
 typedef struct ZergGPS
 {
     uint64_t longitude;
@@ -57,6 +80,9 @@ typedef struct ZergGPS
     uint32_t accuracy;
 }__attribute__((packed)) ZergGPS;
 
+/*
+ * PcapFileHeader contains all pcap file header fields.
+ */
 typedef struct PcapFileHeader
 {
     uint32_t fileTypeID;
@@ -68,6 +94,9 @@ typedef struct PcapFileHeader
     uint32_t linkLayerType;
 }__attribute__((packed)) PcapFileHeader;
 
+/*
+ * PcapPacketHeader contains all pcap packet header fields.
+ */
 typedef struct PcapPacketHeader
 {
     uint32_t uinxEpoch;
@@ -76,6 +105,9 @@ typedef struct PcapPacketHeader
     uint32_t untruncatedPacketLength;
 }__attribute__((packed)) PcapPacketHeader;
 
+/*
+ * Ethernet header contains all ethernet header fields.
+ */
 typedef struct EthernetHeader
 {
     uint32_t macDestinationFirst;
@@ -85,6 +117,9 @@ typedef struct EthernetHeader
     uint16_t ethernetType;
 }__attribute__((packed)) EthernetHeader;
 
+/*
+ * IpHeader contains all ipv4 header fields
+ */
 typedef struct IpHeader
 {
     uint8_t IHL: 4;
@@ -102,6 +137,9 @@ typedef struct IpHeader
     uint32_t dstIP;
 }__attribute__((packed)) IpHeader; 
 
+/*
+ * UdpHeader contains all udp header fields.
+ */
 typedef struct UdpHeader
 {
     uint16_t srcPort;
@@ -110,6 +148,9 @@ typedef struct UdpHeader
     uint16_t checksum;
 }__attribute__((packed)) UdpHeader;
 
+/*
+ * htobe24 will flip the first 24 bits of num.
+ */
 uint32_t htobe24(uint32_t num);
 
 #endif

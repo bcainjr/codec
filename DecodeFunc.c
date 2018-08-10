@@ -23,6 +23,7 @@
 #define INVALIDPROTOCOL    54
 #define INVALIDIPSIZE      55
 #define INVALIDMAGICNUMBER 56
+#define BADPCAPHEADERSIZE  57
 
 /**
  * @brief udpCheck checks if the next protocol is UDP
@@ -166,7 +167,7 @@ static void cmdInstruction(FILE *pFile)
         {
             case 1:
             {
-                printf("Bearing: %f deg.\n", singleFloat.typeFloat);
+                printf("Bearing:  %.4f deg.\n", singleFloat.typeFloat);
                 printf("Location: %u m\n", 
                         htobe16(commandParameters->parameterOne));
                 break;
@@ -285,11 +286,16 @@ static void gpsData(FILE *pFile)
  *
  * @param pFile The pcap file that is being decoded.
  */
-void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
+void parseZergHeader(
+        ZergHeader *zergHeader, 
+        PcapPacketHeader *packetHeader, 
+        FILE *pFile)
 {
     EthernetHeader *ethHeader = calloc(1, sizeof(EthernetHeader));
-    IpHeader *ipHeader = calloc(1, sizeof(IpHeader));
-    unsigned int type = 0, zergLength = 0;
+    IpHeader *ipHeader;
+    UdpHeader *udpHeader;
+    unsigned int type = 0, zergLength = 0, ipLength = 0, 
+                 packetLength = 0, ethLength = 14;
 
     fread(ethHeader, sizeof(EthernetHeader), 1, pFile);
 
@@ -301,8 +307,10 @@ void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
           * for 802.1Q ethernet type.
          */
         fseek(pFile, 4, SEEK_CUR);
+        ethLength += 4;
     }
 
+    ipHeader = calloc(sizeof(IpHeader), 1);
     /* Read in IP header */
     fread(ipHeader, sizeof(IpHeader), 1, pFile);
     if(ipHeader->version == 6 && htobe16(ethHeader->ethernetType) == 0x86dd)
@@ -310,9 +318,11 @@ void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
         udpCheck(ipHeader);
         /* Move to UDP header based on IPv6 */
         fseek(pFile, 20, SEEK_CUR);
+        ipLength = 40;
     }
-    else if(ipHeader->version == 4 && (htobe16(ethHeader->ethernetType) == 0x0800 ||
-                htobe16(ethHeader->ethernetType) == 0x8100))
+    else if(ipHeader->version == 4 && 
+            (htobe16(ethHeader->ethernetType) == 0x0800 || 
+             htobe16(ethHeader->ethernetType) == 0x8100))
     {
         udpCheck(ipHeader);
         /* Move to UDP header based on IHL size */
@@ -321,10 +331,13 @@ void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
             fprintf(stderr, "Invalid IP size.\n");
             free(ethHeader);
             free(ipHeader);
+            free(packetHeader);
             free(zergHeader);
             fclose(pFile);
             exit(INVALIDIPSIZE);
         }
+
+        ipLength = ipHeader->IHL * 4;
         fseek(pFile, (ipHeader->IHL - 5) * 4, SEEK_CUR);
     }
     else
@@ -332,23 +345,57 @@ void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
         fprintf(stderr, "Invalid IP version.\n");
         free(zergHeader);
         free(ipHeader);
+        free(packetHeader);
         free(ethHeader);
         fclose(pFile);
         exit(INVALIDVERSION);
     }
-    free(ethHeader);
-    free(ipHeader);
 
-    /* Move to Zerg header */
-    fseek(pFile, UDPHEADERSIZE, SEEK_CUR);
+
+    /* Read udp header */
+    udpHeader = calloc(sizeof(UdpHeader), 1);
+    fread(udpHeader, sizeof(UdpHeader), 1, pFile);
 
     /* Start parsing Zerg header */
     fread(zergHeader, sizeof(*zergHeader), 1, pFile);
+    type = zergHeader->type;
+    zergLength = htobe24(zergHeader->totalLength);
+
+    if(zergLength == 12)
+    {
+        zergLength += 6;
+    }
+    else if(zergLength == 14)
+    {
+        zergLength += 4;
+    }
+
+    /* Verifty packet length */
+    packetLength = ethLength + ipLength + zergLength + UDPHEADERSIZE; 
+    if(!(packetHeader->lengthOfDataCaptured == packetLength ||
+            htobe32(packetHeader->lengthOfDataCaptured) == packetLength))
+    {
+        printf("Invalid pcap packet header size.\n");
+        printf("packet length: %d\n", packetHeader->lengthOfDataCaptured);
+        printf("added length: %d\n", ethLength + ipLength + zergLength + UDPHEADERSIZE);
+        free(zergHeader);
+        free(packetHeader);
+        free(ethHeader);
+        free(udpHeader);
+        free(ipHeader);
+        fclose(pFile);
+        exit(BADPCAPHEADERSIZE);
+    }
+
 
     if(zergHeader->version != 1)
     {
         fprintf(stderr, "Invalid Zerg packet version %d\n", zergHeader->version);
         free(zergHeader);
+        free(packetHeader);
+        free(ethHeader);
+        free(udpHeader);
+        free(ipHeader);
         fclose(pFile);
         exit(INVALIDVERSION);
     }
@@ -361,9 +408,12 @@ void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
     printf("Type:      %u\n", zergHeader->type);
     printf("Length:    %u\n", htobe24(zergHeader->totalLength));
 
-    type = zergHeader->type;
-    zergLength = htobe24(zergHeader->totalLength);
+    free(packetHeader);
+    free(ethHeader);
+    free(ipHeader);
+    free(udpHeader);
     free(zergHeader);
+
     switch(type)
     {
         case 0:
@@ -397,6 +447,13 @@ void parseZergHeader(ZergHeader *zergHeader, FILE *pFile)
     }
 }
 
+/**
+ * @breif checkFileHeader validates the pcap file header.
+ *
+ * @param inFile Is the file being encoded.
+ *
+ * @return IF 0 the file header is correct if 1 it is false.
+ */
 int checkFileHeader(FILE *inFile)
 {
     PcapFileHeader *fileHeader = calloc(1, sizeof(PcapFileHeader));
