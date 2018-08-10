@@ -111,22 +111,5 @@ typedef struct UdpHeader
 }__attribute__((packed)) UdpHeader;
 
 uint32_t htobe24(uint32_t num);
-void parseZergHeader(ZergHeader *zergHeader, FILE *pFile);
-void fprintPcapFileHeader(FILE *outFile);
-void fprintPcapPacketHeader(int zergLength, FILE *outFile);
-void fprintEthernetHeader(FILE *outFile);
-void fprintIpHeader(int zergLength, FILE *outFile);
-void fprintUdpHeader(int zergLength, FILE *outFile);
-void fprintZergHeader(ZergHeader *zergHeader, FILE *inFile, FILE *outFile);
-void fprintZergStatus(ZergHeader *zergHeader, FILE *inFile, FILE *outFile);
-void fprintZergCommand(ZergHeader *zergHeader, FILE *inFile, FILE *outFile);
-void fprintZergGPS(ZergHeader *zergHeader, FILE *inFile, FILE *outFile);
-size_t getZergString(ZergHeader *zergHeader, char **str, FILE *pFile);
-int getTypeNumber(char *type);
-int getCmdNumber(char *type);
-void moveToNextLine(FILE *inFile);
-int checkInputMain(char fields[][16]);
-int checkInputGPS(char fields[][16]);
-void fprintHeaders(ZergHeader *zergHeader, FILE *outFile);
 
 #endif
