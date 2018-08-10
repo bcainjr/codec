@@ -314,11 +314,11 @@ fi
 #Non zerg packet
 ./decode pcaps/nonzerg.pcap > /dev/null 2>&1
 error=$?
-if [[ $error -eq 11 ]]
+if [[ $error -eq 57 ]]
 then
     echo -e "[\e[32m+\e[0m]\e[32mPassed\e[0m nonzerg."
 else
-    echo -e "[\e[31m-\e[0m]\e[31mFailed\e[0m nonzerg."
+    echo -e "[\e[31m-\e[0m]\e[31mFailed\e[0m nonzerg with error code $error."
 fi
 
 valgrind -v ./decode pcaps/nonzerg.pcap > valgrind.txt 2>&1

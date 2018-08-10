@@ -6,7 +6,6 @@
 * @brief Source code for Packets.h to parse and create pcaps.
 */
 
-#include <stdlib.h>
 #include <ctype.h>
 #include "Packets.h"
 

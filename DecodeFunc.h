@@ -7,8 +7,16 @@
 #ifndef DECODEFUNC_H
 #define DECODEFUNC_H
 
-#include <stdint.h>
-
+/*
+ * Validates the pcap file header reading from inFile and
+ * returns 0 if valid or 1 if invalid.
+ */
 int checkFileHeader(FILE *inFile);
-void parseZergHeader(ZergHeader *zergHeader, FILE *pFile);
+
+/*
+ * Parses pFile for the zerg header data and saves it into
+ * zergHeader.
+ */
+void parseZergHeader(ZergHeader *zergHeader, PcapPacketHeader *packetHeader, FILE *pFile);
+
 #endif

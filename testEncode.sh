@@ -3,6 +3,11 @@
 make clean
 make debug
 
+if [[ -e failDeEn* ]]
+then
+    rm failDeEn*
+fi
+
 #Hello message------------------------------------------------------------------------
 ./encode  testPcaps/M_hello testPcaps/M_hello.pcap > /dev/null 2>&1
 error=$?
@@ -22,10 +27,10 @@ then
     cat valgrind.txt > M_helloValgrind.txt
 fi
 
-./decode testPcaps/M_hello.pcap > decoded.d > /dev/null 2>&1
-diff decoded.d M_hello > diffDeEn > /dev/null 2>&1
+./decode testPcaps/M_hello.pcap > decoded.d
+diff -y decoded.d testPcaps/M_hello > diffDeEn
 diffCode=$?
-if [[ $diffCode == 1 ]]
+if [[ $diffCode -ne 0 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m M_hello diff failed"
     cat diffDeEn > failDeEnMhello
@@ -49,10 +54,10 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
-./decode testPcaps/M_empty.pcap > decoded.d > /dev/null 2>&1
-diff decoded.d M_empty > diffDeEn > /dev/null 2>&1
+./decode testPcaps/M_empty.pcap > decoded.d
+diff -y decoded.d testPcaps/M_empty > diffDeEn
 diffCode=$?
-if [[ $diffCode == 1 ]]
+if [[ $diffCode -eq 1 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m M_empty diff failed"
     cat diffDeEn > failDeEnHempty
@@ -76,10 +81,10 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
-./decode testPcaps/S_normal.pcap > decoded.d > /dev/null 2>&1
-diff decoded.d S_normal > diffDeEn > /dev/null 2>&1
+./decode testPcaps/S_normal.pcap > decoded.d
+diff -y decoded.d testPcaps/S_normal > diffDeEn
 diffCode=$?
-if [[ $diffCode == 1 ]]
+if [[ $diffCode -eq 1 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m S_normal diff failed"
     cat diffDeEn > failDeEnSnormal
@@ -103,10 +108,10 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
-./decode testPcaps/S_noname.pcap > decoded.d > /dev/null 2>&1
-diff decoded.d S_noname > diffDeEn > /dev/null 2>&1
+./decode testPcaps/S_noname.pcap > decoded.d
+diff -y decoded.d testPcaps/S_noname > diffDeEn
 diffCode=$?
-if [[ $diffCode == 1 ]]
+if [[ $diffCode -eq 1 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m S_noname diff failed"
     cat diffDeEn > failDeEnSnoname
@@ -130,6 +135,15 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
+./decode testPcaps/C_repeat.pcap > decoded.d
+diff -y decoded.d testPcaps/C_repeat > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m C_repeat diff failed"
+    cat diffDeEn > failDeEnCrepeat
+fi
+
 #Command add setgroup -17------------------------------------------------------------------------
 ./encode  testPcaps/C_addsetgroup-17 testPcaps/C_addsetgroup-17.pcap > /dev/null 2>&1
 error=$?
@@ -146,6 +160,15 @@ error=$?
 if [[ $error -ne 0 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
+fi
+
+./decode testPcaps/C_addsetgroup-17.pcap > decoded.d
+diff -y decoded.d testPcaps/C_addsetgroup-17 > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m C_addsetgroup-17 diff failed"
+    cat diffDeEn > failDeEnCaddsetgroup
 fi
 
 #Command remove setgroup -17------------------------------------------------------------------------
@@ -166,6 +189,15 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
+./decode testPcaps/C_removesetgroup-17.pcap > decoded.d
+diff -y decoded.d testPcaps/C_removesetgroup-17 > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m C_removesetgroup-17 diff failed"
+    cat diffDeEn > failDeEnCremovesetgroup
+fi
+
 #Command status------------------------------------------------------------------------
 ./encode  testPcaps/C_status testPcaps/C_status.pcap > /dev/null 2>&1
 error=$?
@@ -182,6 +214,15 @@ error=$?
 if [[ $error -ne 0 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
+fi
+
+./decode testPcaps/C_status.pcap > decoded.d
+diff -y decoded.d testPcaps/C_status > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m C_status diff failed"
+    cat diffDeEn > failDeEnCstatus
 fi
 
 #GPS normal------------------------------------------------------------------------
@@ -202,6 +243,15 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
+./decode testPcaps/G_normal.pcap > decoded.d
+diff -y decoded.d testPcaps/G_normal > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m G_normal diff failed"
+    cat diffDeEn > failDeEnGnormal
+fi
+
 #Multi message/status/gps------------------------------------------------------------------------
 ./encode  testPcaps/multiM_S_G testPcaps/multiM_S_G.pcap > /dev/null 2>&1
 error=$?
@@ -220,6 +270,15 @@ then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
 fi
 
+./decode testPcaps/multiM_S_G.pcap > decoded.d
+diff -y decoded.d testPcaps/multiM_S_G > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m multiM_S_G diff failed"
+    cat diffDeEn > failDeEnMultiM_S_G
+fi
+
 #Goto command------------------------------------------------------------------------
 ./encode  testPcaps/C_goto testPcaps/C_goto.pcap > /dev/null 2>&1
 error=$?
@@ -236,6 +295,15 @@ error=$?
 if [[ $error -ne 0 ]]
 then
     echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
+fi
+
+./decode testPcaps/C_goto.pcap > decoded.d
+diff -y decoded.d testPcaps/C_goto > diffDeEn
+diffCode=$?
+if [[ $diffCode -eq 1 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m C_goto diff failed"
+    cat diffDeEn > failDeEnCgoto
 fi
 
 #Main zerg headers mixed------------------------------------------------------------------------
@@ -560,7 +628,43 @@ then
     cat valgrind.txt > badLong.txt
 fi
 
+#Zerg empty line  at the end------------------------------------------------------------------------
+./encode  testPcaps/emptLineEnd testPcaps/emptLineEnd.pcap > /dev/null 2>&1
+error=$?
+if [[ $error -eq 0 ]]
+then
+    echo -e "[\e[32m+\e[0m]\e[32mPassed\e[0m empty line at the end"
+else
+    echo -e "[\e[31m-\e[0m]\e[31mFailed\e[0m empty line at the end with exit code $error"
+fi
 
+valgrind --leak-check=full -v ./encode testPcaps/emptLineEnd testPcaps/emptLineEnd.pcap > valgrind.txt 2>&1
+cat valgrind.txt | grep -o "All heap blocks were freed" > /dev/null
+error=$?
+if [[ $error -ne 0 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
+    cat valgrind.txt > emptLineEnd.txt
+fi
+
+#Zerg multi message empty lines------------------------------------------------------------------------
+./encode  testPcaps/multiEmptyLines testPcaps/multiEmptyLines.pcap > /dev/null 2>&1
+error=$?
+if [[ $error -eq 0 ]]
+then
+    echo -e "[\e[32m+\e[0m]\e[32mPassed\e[0m multiple empty lines"
+else
+    echo -e "[\e[31m-\e[0m]\e[31mFailed\e[0m multiple empty lines with exit code $error"
+fi
+
+valgrind --leak-check=full -v ./encode testPcaps/multiEmptyLines testPcaps/multiEmptyLines.pcap > valgrind.txt 2>&1
+cat valgrind.txt | grep -o "All heap blocks were freed" > /dev/null
+error=$?
+if [[ $error -ne 0 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
+    cat valgrind.txt > multiEmptyLines.txt
+fi
 
 
 
@@ -574,4 +678,9 @@ fi
 if [[ -e diffDeEn ]]
 then
     rm diffDeEn
+fi
+
+if [[ -e decoded.d ]]
+then
+    rm decoded.d
 fi

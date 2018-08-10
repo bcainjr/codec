@@ -46,10 +46,10 @@
  * 
  * @return A r if the check succeded or 0 if it failed.
  */
-static int statusInputCheck(char fields[][16])
+static int statusInputCheck(char fields[][17])
 {
     int returnValue = 1;
-    char field[4][16] =
+    char field[4][17] =
     {
         "HP:", "Type:", "Armor:", "MaxSpeed:"  
     };
@@ -267,11 +267,21 @@ static void fprintUdpHeader(int zergLength, FILE *outFile)
  */
 static void fprintHeaders(ZergHeader *zergHeader, FILE *outFile)
 {
+    int zergLen = htobe24(zergHeader->totalLength), padding = 0;
+    if(zergHeader->type == 0 && zergLen < 18)
+    {
+        padding = 18 - zergLen;
+    }
+
+    if(zergHeader->type == 2 && zergLen == 14)
+    {
+        padding = 4;
+    }
     /* Write headers before Zerg header */
-    fprintPcapPacketHeader(htobe24(zergHeader->totalLength), outFile);
+    fprintPcapPacketHeader(zergLen + padding, outFile);
     fprintEthernetHeader(outFile);
-    fprintIpHeader(htobe24(zergHeader->totalLength), outFile);
-    fprintUdpHeader(htobe24(zergHeader->totalLength), outFile);
+    fprintIpHeader(zergLen, outFile);
+    fprintUdpHeader(zergLen, outFile);
     fwrite(zergHeader, sizeof(ZergHeader), 1, outFile);
 }
 
@@ -293,12 +303,11 @@ static void fprintHeaders(ZergHeader *zergHeader, FILE *outFile)
 static size_t getZergString(ZergHeader *zergHeader, char **str, FILE *inFile, FILE *outFile)
 { 
     char *word = NULL, sep[1] = " ";
-    size_t size = 0, strLen = 0; 
+    size_t size = 0, strLen = 0, padding = 0; 
 
     /* Remove tag and capture message */
     if(getdelim(&word, &size, *sep, inFile) != -1)
     {
-        printf("word %s strcmp %d\n", word, strcmp("Message: ", word));
         if(zergHeader->type == 0 && strcmp("Message: ", word))
         {
             fprintf(stderr, "Failed message.\n");
@@ -330,7 +339,7 @@ static size_t getZergString(ZergHeader *zergHeader, char **str, FILE *inFile, FI
     }
 
     /* Clear leading white space from string */
-    while(isspace(fgetc(inFile)))
+    while(isblank(fgetc(inFile)))
     {
         continue;
     }
@@ -341,15 +350,21 @@ static size_t getZergString(ZergHeader *zergHeader, char **str, FILE *inFile, FI
     if(zergHeader->type == 1)
     {
         strLen = htobe24(zergHeader->totalLength) - 24;
-        *str = calloc(strLen, sizeof(char));
-        word = calloc(strLen, sizeof(char));
     }
     else
     {
         strLen = htobe24(zergHeader->totalLength) - 12;
-        *str = calloc(strLen, sizeof(char));
-        word = calloc(strLen, sizeof(char));
+        /* Account for padding */
+        if(strLen < 6)
+        {
+            padding = 7 - strLen;
+        }
     }
+
+
+    printf("strlen %lu\n", strLen);
+    *str = calloc(strLen + padding + 1, sizeof(char));
+    word = calloc(strLen + padding + 1, sizeof(char));
 
     fgets(word, strLen + 1, inFile);
     strcpy(*str, word);
@@ -371,8 +386,8 @@ static size_t getZergString(ZergHeader *zergHeader, char **str, FILE *inFile, FI
 static void fprintZergStatus(ZergHeader *zergHeader, FILE *inFile, FILE *outFile)
 {
     ZergStatus *zergStatus = calloc(1, sizeof(ZergStatus));
-    char *printLine = NULL, type[11] = {0};
-    char fields[4][16] = {0};
+    char *printLine = NULL, type[12] = {0};
+    char fields[4][17] = {0};
     SinglePrecisionFloat speed;
     int exitStatus = 0;
     uint8_t armor = 0;
@@ -471,23 +486,12 @@ static void fprintZergCommand(ZergHeader *zergHeader, FILE *inFile, FILE *outFil
         exit(INVALIDCOMMAND);
     }
 
-    if(htobe16(zergCommand->command) == 3 || 
-            (htobe16(zergCommand->command) % 2 == 0 && 
-            htobe16(zergCommand->command) < 7))
-    {
-        zergHeader->totalLength = htobe24(htobe24(zergHeader->totalLength) + 6);
-    }
-    else
-    {
-        zergHeader->totalLength = htobe24(htobe24(zergHeader->totalLength) + 8);
-    }
-
-    fprintHeaders(zergHeader, outFile);
-    fwrite(zergCommand, sizeof(ZergCommand), 1, outFile);
 
     if(htobe16(zergCommand->command) % 2 == 0 && 
             htobe16(zergCommand->command) < 7)
     {
+        fprintHeaders(zergHeader, outFile);
+        fwrite(zergCommand, sizeof(ZergCommand), 1, outFile);
         fwrite(&padding, sizeof(char), 4, outFile);
     }
     else
@@ -611,6 +615,8 @@ static void fprintZergCommand(ZergHeader *zergHeader, FILE *inFile, FILE *outFil
             }
         }
 
+        fprintHeaders(zergHeader, outFile);
+        fwrite(zergCommand, sizeof(ZergCommand), 1, outFile);
         fwrite(commandParameters, sizeof(ZergCommandParameters), 1, outFile);
         free(commandParameters);
     }
@@ -634,7 +640,6 @@ static void fprintZergGPS(ZergHeader *zergHeader, FILE *inFile, FILE *outFile)
     DoublePrecisionFloat longitude, latitude;
     SinglePrecisionFloat altitude, bearing, speed, accuracy;
 
-    fprintHeaders(zergHeader, outFile);
 
     fscanf(inFile, "%15s %lf", fields[0], &(latitude.typeDouble));
     moveToNextLine(inFile);
@@ -690,6 +695,8 @@ static void fprintZergGPS(ZergHeader *zergHeader, FILE *inFile, FILE *outFile)
     zergGPS->bearing = htobe32(bearing.hex);
     zergGPS->speed = htobe32(speed.hex);
     zergGPS->accuracy = htobe32(accuracy.hex);
+
+    fprintHeaders(zergHeader, outFile);
 
     /* Writing GPS header to specified pcap file. */
     fwrite(zergGPS, sizeof(ZergGPS), 1, outFile);

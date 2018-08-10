@@ -48,11 +48,11 @@ int main(int argc, char *argv[])
 
     while(fread(packetHeader, sizeof(PcapPacketHeader), 1, pFile) == 1)
     {
-        free(packetHeader);
+
 
         /* Parse the Zerg header */
         zergHeader = calloc(sizeof(ZergHeader), 1);
-        parseZergHeader(zergHeader, pFile);
+        parseZergHeader(zergHeader, packetHeader, pFile);
         packetHeader = calloc(sizeof(PcapPacketHeader), 1);
     }
 
