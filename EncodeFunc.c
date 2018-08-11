@@ -362,7 +362,6 @@ static size_t getZergString(ZergHeader *zergHeader, char **str, FILE *inFile, FI
     }
 
 
-    printf("strlen %lu\n", strLen);
     *str = calloc(strLen + padding + 1, sizeof(char));
     word = calloc(strLen + padding + 1, sizeof(char));
 
@@ -371,7 +370,7 @@ static size_t getZergString(ZergHeader *zergHeader, char **str, FILE *inFile, FI
 
     free(word);
 
-    return strLen;
+    return strLen + padding;
 }
 
 /**
@@ -800,8 +799,11 @@ void fprintZergHeader(ZergHeader *zergHeader, FILE *inFile, FILE *outFile)
         }
         default:
         {
-            printf("Invalid type.\n");
-            break;
+            fprintf(stderr, "Invalid type.\n");
+            free(zergHeader);
+            fclose(inFile);
+            fclose(outFile);
+            exit(INVALIDTYPE);
         }
     }
     moveToNextLine(inFile);
