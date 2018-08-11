@@ -666,6 +666,26 @@ then
     cat valgrind.txt > multiEmptyLines.txt
 fi
 
+#Zerg invalid type------------------------------------------------------------------------
+./encode  testPcaps/invalidType testPcaps/invalidType.pcap > /dev/null 2>&1
+error=$?
+if [[ $error -eq 12 ]]
+then
+    echo -e "[\e[32m+\e[0m]\e[32mPassed\e[0m invalid type"
+else
+    echo -e "[\e[31m-\e[0m]\e[31mFailed\e[0m invalid type with exit code $error"
+fi
+
+valgrind --leak-check=full -v ./encode testPcaps/invalidType testPcaps/invalidType.pcap > valgrind.txt 2>&1
+cat valgrind.txt | grep -o "All heap blocks were freed" > /dev/null
+error=$?
+if [[ $error -ne 0 ]]
+then
+    echo -e "-----[\e[31m-\e[0m]\e[31mFailed\e[0m valgrind leaks"
+    cat valgrind.txt > invalidType.txt
+fi
+
+
 
 
 
